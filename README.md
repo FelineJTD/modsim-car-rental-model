@@ -58,12 +58,15 @@ f. Waktu rata-rata, maks, dan minimum orang di dalam sistem ketika datang di lok
 
 ## List yang diperlukan
 
-<ol>
-    <li>Antrian di lokasi 1</li>
-    <li>Antrian di lokasi 2</li>
-    <li>Antrian di lokasi 3</li>
-    <li>Orang di bus</li>
-</ol>
+| No. | List Name                         | Attribute 1 | Attribute 2 | Attribute 3    | Attribute 4 |
+| --- | --------------------------------- | ----------- | ----------- | -------------- | ----------- |
+| 1   | List air terminal 1               | time of arrival  | -           | event_location | -           |
+| 2   | List air terminal 2               | time of arrival  | -           | event_location | -           |
+| 3   | List car rental                   | time of arrival  | -           | event_location | -           |
+| 4   | List bus to air terminal 1        | time of arrival  | -           | event_location | -           |
+| 5   | List bus to air terminal 2        | time of arrival  | -           | event_location | -           |
+| 6   | List bus to car rental            | time of arrival  | -           | event_location | -           |
+| 25  | Event list (untuk event schedule) | event_time  | event_type  | event_location | -           |
 
 ## Random number stream
 
@@ -123,3 +126,4 @@ Menjadi
 ## Notes and Conventions
 
 1. Semua waktu dalam menit
+
