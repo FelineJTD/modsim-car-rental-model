@@ -102,18 +102,24 @@ Karena event di bawah ini kontinu - jumlah antrian selama 80 jam diitung semua. 
 [num_location num_air_terminal simulation_length]
 [location_1_interarrival_rate location_2_interarrival_rate location_3_interarrival_rate]
 [bus_speed bus_capacity bus_stop_time]
-[destination_1_probability destination_2_probability]
+[destination_3_probability destination_1_probability destination_2_probability(equals to 1, because of last element)]
 [unload_time_min unload_time_max]
 [load_time_min load_time_max]
 [distance_to_1 distance_to_2 distance_to_3]
 ```
+
 Menjadi
+
 ```
 3 2 80
 14 10 24
 30 20 5
-0.583 0.417
+0 0.583 1
 16 24
 15 25
 4.5 1 4.5
 ```
+
+## Notes and Conventions
+
+1. Semua waktu dalam menit
