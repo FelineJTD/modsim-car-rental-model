@@ -101,33 +101,34 @@ void parse_input(char* file_name) {
     fclose(infile);
 
     // Debug log
-    printf("num_location: %d\n", num_location);
-    printf("num_air_terminal: %d\n", num_air_terminal);
-    printf("simulation_length: %d\n", simulation_length);
-    printf("bus_speed: %lf\n", bus_speed);
-    printf("bus_capacity: %d\n", bus_capacity);
-    printf("bus_stop_time: %lf\n", bus_stop_time);
+    printf("- Printing input...\n");
+    printf("  num_location: %d\n", num_location);
+    printf("  num_air_terminal: %d\n", num_air_terminal);
+    printf("  simulation_length: %d\n", simulation_length);
+    printf("  bus_speed: %lf\n", bus_speed);
+    printf("  bus_capacity: %d\n", bus_capacity);
+    printf("  bus_stop_time: %lf\n", bus_stop_time);
     for (int i = 0; i < num_location; i++) {
-        printf("expon_interarrival_rate[%d]: %lf\n", i, expon_interarrival_rate[i]);
+        printf("  expon_interarrival_rate[%d]: %lf\n", i, expon_interarrival_rate[i]);
     }
     for (int i = 0; i < num_location; i++) {
-        printf("destination_probability[%d]: %lf\n", i, destination_probability[i]);
+        printf("  destination_probability[%d]: %lf\n", i, destination_probability[i]);
     }
     for (int i = 0; i < 2; i++) {
-        printf("uniform_unload_time_range[%d]: %lf\n", i, uniform_unload_time_range[i]);
+        printf("  uniform_unload_time_range[%d]: %lf\n", i, uniform_unload_time_range[i]);
     }
     for (int i = 0; i < 2; i++) {
-        printf("uniform_load_time_range[%d]: %lf\n", i, uniform_load_time_range[i]);
+        printf("  uniform_load_time_range[%d]: %lf\n", i, uniform_load_time_range[i]);
     }
     for (int i = 0; i < num_location; i++) {
-        printf("distance[%d]: %lf\n", i, distance[i]);
+        printf("  distance[%d]: %lf\n", i, distance[i]);
     }
-    printf("\n");
+    printf("* Input printed.");
 }
 
 // Init model
 void init_model() {
-    printf("Initializing model...\n");
+    printf("- Initializing model...\n");
     // Init simlib
     printf("- Initializing simlib...\n");
     init_simlib();
@@ -142,27 +143,28 @@ void init_model() {
 
     // Schedule first arrival event of persons on each location
     // The mean interarrival time is 60.0 / expon_interarrival_rate (meaning the time between each person arrival is 60.0 / expon_interarrival_rate minutes)
-    printf("- Scheduling first arrival event of persons on each terminal...\n");
+    printf("- Scheduling first arrival event of persons on each locations...\n");
     // sim_time = 0
     event_schedule(expon(60 / expon_interarrival_rate[0], STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
     event_schedule(expon(60 / expon_interarrival_rate[1], STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
     event_schedule(expon(60 / expon_interarrival_rate[2], STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
 
-    // Schedule first bus arrival event from location 3 to 1. The time is distance to air terminal 1 / bus_speed * 60.0 (convert to minutes)
-    printf("- Scheduling first bus arrival event from terminal 3 to 1...\n");
+    // Schedule first bus arrival event from car rental to air terminal 1. The time is distance to air terminal 1 / bus_speed * 60.0 (convert to minutes)
+    printf("- Scheduling first bus arrival event from car rental to air terminal 1...\n");
     event_schedule(hour_to_minutes((distance[0] / bus_speed)), EVENT_BUS_ARRIVAL_AIR_TERMINAL_1);
 
     // Schedule simulation end
     printf("- Scheduling simulation end...\n");
     event_schedule(simulation_length, EVENT_END_SIMULATION);
 
-    printf("Model initialized.\n\n");
+    printf("* Model initialized.\n\n");
 }
 
 // Arrival event
 void arrive(int event_type) {
     if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_1) {
-        // preload list data on transfer
+        printf("[%7.2lf] Person arrived at air terminal 1.\n", sim_time);
+        printf("          Number of people waiting at air terminal 1: %d\n", list_size[LIST_AIR_TERMINAL_1]);
         transfer[1] = sim_time;
         transfer[3] = DESTINATION_CAR_RENTAL;
         list_file(LAST, LIST_AIR_TERMINAL_1);
@@ -170,7 +172,8 @@ void arrive(int event_type) {
         timest(list_size[LIST_AIR_TERMINAL_1], TIMEST_QUEUE_AIR_TERMINAL_1);
         event_schedule(sim_time + expon(60 / expon_interarrival_rate[0], STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
     } else if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_2) {
-        // preload list data on transfer
+        printf("[%7.2lf] Person arrived at air terminal 2.\n", sim_time);
+        printf("          Number of people waiting at air terminal 2: %d\n", list_size[LIST_AIR_TERMINAL_2]);
         transfer[1] = sim_time;
         transfer[3] = DESTINATION_CAR_RENTAL;
         list_file(LAST, LIST_AIR_TERMINAL_2);
@@ -178,6 +181,8 @@ void arrive(int event_type) {
         timest(list_size[LIST_AIR_TERMINAL_2], TIMEST_QUEUE_AIR_TERMINAL_2);
         event_schedule(sim_time + expon(60 / expon_interarrival_rate[1], STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
     } else if (event_type == EVENT_ARRIVAL_CAR_RENTAL) {
+        printf("[%7.2lf] Person arrived at car rental.\n", sim_time);
+        printf("          Number of people waiting at car rental: %d\n", list_size[LIST_CAR_RENTAL]);
         transfer[1] = sim_time;
         
         if (random_integer(destination_probability, STREAM_DETERMINE_DESTINATION) == 1) {
@@ -196,27 +201,30 @@ void arrive(int event_type) {
 // Bus arrival event
 void bus_arrival(int event_type) {
     if (event_type == EVENT_BUS_ARRIVAL_AIR_TERMINAL_1) {
-        printf("Bus arrived at air terminal 1.\n");
-        printf("Number of people departing at terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
+        printf("[%7.2lf] Bus arrived at air terminal 1.\n", sim_time);
+        printf("          Number of people departing at air terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
         bus_arrive_time = sim_time;
+        // unload people wanting to go to air terminal 1
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_1] > 0) {
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_1);
         } else {
             event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_1);
         }
     } else if (event_type == EVENT_BUS_ARRIVAL_AIR_TERMINAL_2) {
-        printf("Bus arrived at air terminal 2.\n");
-        printf("Number of people departing at terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
+        printf("[%7.2lf] Bus arrived at air terminal 2.\n", sim_time);
+        printf("          Number of people departing at air terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
         bus_arrive_time = sim_time;
+        // unload people wanting to go to air terminal 2
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) {
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_2);
         } else {
             event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_2);
         }
     } else if (event_type == EVENT_BUS_ARRIVAL_CAR_RENTAL) {
-        printf("Bus arrived at car rental.\n");
-        printf("Number of people departing at car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
+        printf("[%7.2lf] Bus arrived at car rental.\n", sim_time);
+        printf("          Number of people departing at car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         bus_arrive_time = sim_time;
+        // unload people wanting to go to car rental
         if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) {
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_CAR_RENTAL);
         } else {
@@ -228,17 +236,20 @@ void bus_arrival(int event_type) {
 // Bus departure event
 void bus_departure(int event_type) {
     if (event_type == EVENT_BUS_DEPARTURE_AIR_TERMINAL_1) {
-        printf("- Scheduling bus arrival event from terminal 1 to 2...\n");
+        printf("[%7.2lf] Bus departed from air terminal 1 to 2...\n", sim_time);
+        printf("          Number of people departing from air terminal 1: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         event_schedule(sim_time + hour_to_minutes((distance[1] / bus_speed)), EVENT_BUS_ARRIVAL_AIR_TERMINAL_2);
         // answer d
         sampst(sim_time - bus_arrive_time, SAMPST_DELAY_BUS_STOP_AIR_TERMINAL_1);
     } else if (event_type == EVENT_BUS_DEPARTURE_AIR_TERMINAL_2) {
-        printf("- Scheduling bus arrival event from terminal 2 to car rental...\n");
+        printf("[%7.2lf] Bus departed from air terminal 2 to car rental...\n", sim_time);
+        printf("          Number of people departing from air terminal 2: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         event_schedule(sim_time + hour_to_minutes((distance[2] / bus_speed)), EVENT_BUS_ARRIVAL_CAR_RENTAL);
         // answer d
         sampst(sim_time - bus_arrive_time, SAMPST_DELAY_BUS_STOP_AIR_TERMINAL_2);
     } else if (event_type == EVENT_BUS_DEPARTURE_CAR_RENTAL) {
-        printf("- Scheduling bus arrival event from terminal 2 to car rental...\n");
+        printf("[%7.2lf] Bus departed from car rental to air terminal 1...\n", sim_time);
+        printf("          Number of people departing from car rental: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1] + list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
         event_schedule(sim_time + hour_to_minutes((distance[0] / bus_speed)), EVENT_BUS_ARRIVAL_AIR_TERMINAL_1);
         // answer d
         sampst(sim_time - bus_arrive_time, SAMPST_DELAY_BUS_STOP_CAR_RENTAL);
@@ -257,7 +268,8 @@ void unload(int event_type) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_1);
         // answer f
         sampst(sim_time - transfer[1], SAMPST_DELAY_AIR_TERMINAL_1);
-        printf("Passenger unloaded at air terminal 1.\n");
+        printf("[%7.2lf] Passenger unloaded at air terminal 1.\n", sim_time);
+        printf("          Number of people in the bus wanting to go to terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_1] > 0) { // If there are still passengers in the bus, schedule next unloading event
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_1);
         } else { // If there are no more passengers, schedule next loading event
@@ -267,7 +279,8 @@ void unload(int event_type) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_2);
         // answer f
         sampst(sim_time - transfer[1], SAMPST_DELAY_AIR_TERMINAL_2);
-        printf("Passenger unloaded at air terminal 2.\n");
+        printf("[%7.2lf] Passenger unloaded at air terminal 2.\n", sim_time);
+        printf("          Number of people in the bus wanting to go to terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) { // If there are still passengers in the bus, schedule next unloading event
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_2);
         } else { // If there are no more passengers, schedule next loading event
@@ -277,7 +290,8 @@ void unload(int event_type) {
         list_remove(FIRST, LIST_BUS_TO_CAR_RENTAL);
         // answer f
         sampst(sim_time - transfer[1], SAMPST_DELAY_CAR_RENTAL);
-        printf("Passenger unloaded at car rental.\n");
+        printf("[%7.2lf] Passenger unloaded at car rental.\n", sim_time);
+        printf("          Number of people in the bus wanting to go to car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) { // If there are still passengers in the bus, schedule next unloading event
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_CAR_RENTAL);
         } else { // If there are no more passengers, schedule next loading event
@@ -291,12 +305,11 @@ void unload(int event_type) {
 // TODO: validate capacity
 void load(int event_type) {
     if (event_type == EVENT_LOAD_AIR_TERMINAL_1) {
-        printf("Bus loading passengers at air terminal 1.\n");
-        printf("Number of people waiting at air terminal 1: %d\n", list_size[LIST_AIR_TERMINAL_1]);
         // Remove a person from the queue at air terminal and put it in the bus, direction to car rental
         list_remove(FIRST, LIST_AIR_TERMINAL_1);
         list_file(LAST, LIST_BUS_TO_CAR_RENTAL);
-        printf("Passenger loaded to bus, direction to car rental.\n");
+        printf("[%7.2lf] Passenger loaded to bus, direction to car rental.\n", sim_time);
+        printf("          Number of people waiting at air terminal 1: %d\n", list_size[LIST_AIR_TERMINAL_1]);
         if (list_size[LIST_AIR_TERMINAL_1] > 0) { // If there are still passengers in the queue, schedule next loading event
             event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_1);
         } else { // If there are no more passengers, schedule bus departure event
@@ -304,12 +317,11 @@ void load(int event_type) {
             event_schedule(sim_time + uniform(bus_stop_time, bus_stop_time, STREAM_LOADING), EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
         }
     } else if (event_type == EVENT_LOAD_AIR_TERMINAL_2) {
-        printf("Bus loading passengers at air terminal 2.\n");
-        printf("Number of people waiting at air terminal 2: %d\n", list_size[LIST_AIR_TERMINAL_2]);
         // Remove a person from the queue at air terminal and put it in the bus, direction to car rental
         list_remove(FIRST, LIST_AIR_TERMINAL_2);
         list_file(LAST, LIST_BUS_TO_CAR_RENTAL);
-        printf("Passenger loaded to bus, direction to car rental.\n");
+        printf("[%7.2lf] Passenger loaded to bus, direction to car rental.\n", sim_time);
+        printf("          Number of people waiting at air terminal 2: %d\n", list_size[LIST_AIR_TERMINAL_2]);
         if (list_size[LIST_AIR_TERMINAL_2] > 0) { // If there are still passengers in the queue, schedule next loading event
             event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_2);
         } else { // If there are no more passengers, schedule bus departure event
@@ -317,16 +329,16 @@ void load(int event_type) {
             event_schedule(sim_time + uniform(bus_stop_time, bus_stop_time, STREAM_LOADING), EVENT_BUS_DEPARTURE_AIR_TERMINAL_2);
         }
     } else if (event_type == EVENT_LOAD_CAR_RENTAL) {
-        printf("Bus loading passengers at car rental.\n");
-        printf("Number of people waiting at car rental: %d\n", list_size[LIST_CAR_RENTAL]);
         // Remove a person from the queue at car rental and put it in the bus, direction to air terminal
         list_remove(FIRST, LIST_CAR_RENTAL);
         if (transfer[3] == DESTINATION_AIR_TERMINAL_1) {
+            printf("[%7.2lf] Passenger loaded to bus, direction to air terminal 1.\n", sim_time);
             list_file(LAST, LIST_BUS_TO_AIR_TERMINAL_1);
         } else {
+            printf("[%7.2lf] Passenger loaded to bus, direction to air terminal 2.\n", sim_time);
             list_file(LAST, LIST_BUS_TO_AIR_TERMINAL_2);
         }
-        printf("Passenger loaded to bus, direction to air terminal.\n");
+        printf("          Number of people waiting at car rental: %d\n", list_size[LIST_CAR_RENTAL]);
         if (list_size[LIST_CAR_RENTAL] > 0) { // If there are still passengers in the queue, schedule next loading event
             event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_CAR_RENTAL);
         } else { // If there are no more passengers, schedule bus departure event
@@ -369,7 +381,7 @@ int main() {
     // Init model and initialize first events
     init_model();
 
-    printf("Starting simulation...\n");
+    printf("- Starting simulation...\n");
     
     // Invoke timing and determine action based on next event type
     while (next_event_type != EVENT_END_SIMULATION) {
@@ -425,6 +437,7 @@ int main() {
     }
 
     // Event end simulation
+    printf("[%7.2lf] Simulation ended.\n", sim_time);
     print_report("car_rental.out");
 
     return 0;
