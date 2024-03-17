@@ -187,23 +187,29 @@ void arrive(int event_type) {
 
 // Bus arrival event
 void bus_arrival(int event_type) {
-    if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_1) {
+    if (event_type == EVENT_BUS_ARRIVAL_AIR_TERMINAL_1) {
         printf("Bus arrived at air terminal 1.\n");
+        printf("Number of people departing at terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_1] > 0) {
-            printf("Number of people going to terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_1);
+        } else {
+            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_1);
         }
-    } else if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_2) {
+    } else if (event_type == EVENT_BUS_ARRIVAL_AIR_TERMINAL_2) {
         printf("Bus arrived at air terminal 2.\n");
+        printf("Number of people departing at terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) {
-            printf("Number of people going to terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_2);
+        } else {
+            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_2);
         }
-    } else if (event_type == EVENT_ARRIVAL_CAR_RENTAL) {
+    } else if (event_type == EVENT_BUS_ARRIVAL_CAR_RENTAL) {
         printf("Bus arrived at car rental.\n");
+        printf("Number of people departing at car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) {
-            printf("Number of people going to car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_CAR_RENTAL);
+        } else {
+            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_CAR_RENTAL);
         }
     }
 }
@@ -223,6 +229,7 @@ void unload(int event_type) {
     } else if (event_type == EVENT_UNLOAD_AIR_TERMINAL_2) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_2);
         sampst(sim_time - transfer[1], SAMPST_DELAY_AIR_TERMINAL_2);
+        printf("Passenger unloaded at air terminal 2.\n");
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) { // If there are still passengers in the bus, schedule next unloading event
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_2);
         } else { // If there are no more passengers, schedule next loading event
@@ -231,10 +238,60 @@ void unload(int event_type) {
     } else if (event_type == EVENT_UNLOAD_CAR_RENTAL) {
         list_remove(FIRST, LIST_BUS_TO_CAR_RENTAL);
         sampst(sim_time - transfer[1], SAMPST_DELAY_CAR_RENTAL);
+        printf("Passenger unloaded at car rental.\n");
         if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) { // If there are still passengers in the bus, schedule next unloading event
             event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_CAR_RENTAL);
         } else { // If there are no more passengers, schedule next loading event
             event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_CAR_RENTAL);
+        }
+    }
+}
+
+// Load event
+// When no more passengers to unload, bus will load passengers
+void load(int event_type) {
+    if (event_type == EVENT_LOAD_AIR_TERMINAL_1) {
+        printf("Bus loading passengers at air terminal 1.\n");
+        printf("Number of people waiting at air terminal 1: %d\n", list_size[LIST_AIR_TERMINAL_1]);
+        // Remove a person from the queue at air terminal and put it in the bus, direction to car rental
+        list_remove(FIRST, LIST_AIR_TERMINAL_1);
+        list_file(LAST, LIST_BUS_TO_CAR_RENTAL);
+        printf("Passenger loaded to bus, direction to car rental.\n");
+        if (list_size[LIST_AIR_TERMINAL_1] > 0) { // If there are still passengers in the queue, schedule next loading event
+            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_1);
+        } else { // If there are no more passengers, schedule bus departure event
+            // TODO: Ini blm memperhitungkan waktu minimal 5 menit, if more than 5 menit dia langsung cabut. Ini kayanya dia abis last passenger baru ngitung start 5 menit
+            event_schedule(sim_time + uniform(bus_stop_time, bus_stop_time, STREAM_LOADING), EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
+        }
+    } else if (event_type == EVENT_LOAD_AIR_TERMINAL_2) {
+        printf("Bus loading passengers at air terminal 2.\n");
+        printf("Number of people waiting at air terminal 2: %d\n", list_size[LIST_AIR_TERMINAL_2]);
+        // Remove a person from the queue at air terminal and put it in the bus, direction to car rental
+        list_remove(FIRST, LIST_AIR_TERMINAL_2);
+        list_file(LAST, LIST_BUS_TO_CAR_RENTAL);
+        printf("Passenger loaded to bus, direction to car rental.\n");
+        if (list_size[LIST_AIR_TERMINAL_2] > 0) { // If there are still passengers in the queue, schedule next loading event
+            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_2);
+        } else { // If there are no more passengers, schedule bus departure event
+            // TODO
+            event_schedule(sim_time + uniform(bus_stop_time, bus_stop_time, STREAM_LOADING), EVENT_BUS_DEPARTURE_AIR_TERMINAL_2);
+        }
+    } else if (event_type == EVENT_LOAD_CAR_RENTAL) {
+        printf("Bus loading passengers at car rental.\n");
+        printf("Number of people waiting at car rental: %d\n", list_size[LIST_CAR_RENTAL]);
+        // Remove a person from the queue at car rental and put it in the bus, direction to air terminal
+        list_remove(FIRST, LIST_CAR_RENTAL);
+        if (transfer[3] == DESTINATION_AIR_TERMINAL_1) {
+            list_file(LAST, LIST_BUS_TO_AIR_TERMINAL_1);
+        } else {
+            list_file(LAST, LIST_BUS_TO_AIR_TERMINAL_2);
+        }
+        printf("Passenger loaded to bus, direction to air terminal.\n");
+        if (list_size[LIST_CAR_RENTAL] > 0) { // If there are still passengers in the queue, schedule next loading event
+            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_CAR_RENTAL);
+        } else { // If there are no more passengers, schedule bus departure event
+            // TODO
+            event_schedule(sim_time + uniform(bus_stop_time, bus_stop_time, STREAM_LOADING), EVENT_BUS_DEPARTURE_CAR_RENTAL);
         }
     }
 }
@@ -278,7 +335,7 @@ int main() {
 
     // Invoke timing and determine action based on next event type
     while (next_event_type != EVENT_END_SIMULATION) {
-        // printf("Next event type: %d\n", next_event_type);
+        printf("Next event type: %d\n", next_event_type);
         timing();
         switch (next_event_type) {
             case EVENT_ARRIVAL_AIR_TERMINAL_1:
@@ -307,6 +364,15 @@ int main() {
                 break;
             case EVENT_UNLOAD_CAR_RENTAL:
                 unload(EVENT_UNLOAD_CAR_RENTAL);
+                break;
+            case EVENT_LOAD_AIR_TERMINAL_1:
+                load(EVENT_LOAD_AIR_TERMINAL_1);
+                break;
+            case EVENT_LOAD_AIR_TERMINAL_2:
+                load(EVENT_LOAD_AIR_TERMINAL_2);
+                break;
+            case EVENT_LOAD_CAR_RENTAL:
+                load(EVENT_LOAD_CAR_RENTAL);
                 break;
         }
     }
