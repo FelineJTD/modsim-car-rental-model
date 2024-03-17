@@ -127,3 +127,5 @@ Menjadi
 
 1. Semua waktu dalam menit
 
+## To Compile and  Run
+```make compile-run```
