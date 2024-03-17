@@ -117,28 +117,37 @@ void parse_input(char* file_name) {
     for (int i = 0; i < num_location; i++) {
         printf("distance[%d]: %lf\n", i, distance[i]);
     }
+    printf("\n");
 }
 
 // Init model
 void init_model() {
+    printf("Initializing model...\n");
     // Init simlib
+    printf("- Initializing simlib...\n");
     init_simlib();
 
     // Reset all sampst and timest variables
+    printf("- Resetting all sampst and timest variables...\n");
     sampst(0.0, 0);
     timest(0.0, 0);
 
     // Schedule first arrival event of persons on each terminal
     // The mean interarrival time is 60.0 / expon_interarrival_rate (meaning the time between each person arrival is 60.0 / expon_interarrival_rate minutes)
+    printf("- Scheduling first arrival event of persons on each terminal...\n");
     event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[0]), STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
     event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[1]), STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
     event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[2]), STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
 
     // Schedule first bus arrival event from terminal 3 to 1. The time is distance to terminal 1 / bus_speed * 60.0 (convert to minutes)
+    printf("- Scheduling first bus arrival event from terminal 3 to 1...\n");
     event_schedule(hour_to_minutes((distance[0] / bus_speed)), EVENT_BUS_ARRIVAL_AIR_TERMINAL_1);
 
     // Schedule simulation end
+    printf("- Scheduling simulation end...\n");
     event_schedule(hour_to_minutes(simulation_length), EVENT_END_SIMULATION);
+
+    printf("Model initialized.\n");
 }
 
 // Arrival event
@@ -208,7 +217,7 @@ int main() {
     parse_input("car_rental.in");
 
     // Init model and initialize first events
-    init_simlib();
+    init_model();
 
     // Invoke timing and determine action based on next event type
     while (next_event_type != EVENT_END_SIMULATION) {
