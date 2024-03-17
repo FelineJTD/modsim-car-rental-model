@@ -74,14 +74,15 @@ double second_to_minutes(double time) {
 }
 
 // Input parser
+// units: time in minutes, speed in miles per hour, distance in miles
 void parse_input(char* file_name) {
     infile = fopen(file_name, "r");
     fscanf(infile, "%d %d %d", &num_location, &num_air_terminal, &simulation_length);
     simulation_length = hour_to_minutes(simulation_length);
+    fscanf(infile, "%lf %lf %lf", &bus_speed, &bus_capacity, &bus_stop_time);
     for (int i = 0; i < num_location; i++) {
         fscanf(infile, "%lf", &expon_interarrival_rate[i]);
     }
-    fscanf(infile, "%lf %lf %lf", &bus_speed, &bus_capacity, &bus_stop_time);
     for (int i = 0; i < num_location; i++) {
         fscanf(infile, "%lf", &destination_probability[i]);
     }
@@ -102,12 +103,12 @@ void parse_input(char* file_name) {
     printf("num_location: %d\n", num_location);
     printf("num_air_terminal: %d\n", num_air_terminal);
     printf("simulation_length: %d\n", simulation_length);
-    for (int i = 0; i < num_location; i++) {
-        printf("expon_interarrival_rate[%d]: %lf\n", i, expon_interarrival_rate[i]);
-    }
     printf("bus_speed: %lf\n", bus_speed);
     printf("bus_capacity: %lf\n", bus_capacity);
     printf("bus_stop_time: %lf\n", bus_stop_time);
+    for (int i = 0; i < num_location; i++) {
+        printf("expon_interarrival_rate[%d]: %lf\n", i, expon_interarrival_rate[i]);
+    }
     for (int i = 0; i < num_location; i++) {
         printf("destination_probability[%d]: %lf\n", i, destination_probability[i]);
     }
@@ -139,9 +140,9 @@ void init_model() {
     // The mean interarrival time is 60.0 / expon_interarrival_rate (meaning the time between each person arrival is 60.0 / expon_interarrival_rate minutes)
     printf("- Scheduling first arrival event of persons on each terminal...\n");
     // sim_time = 0
-    event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[0]), STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
-    event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[1]), STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
-    event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[2]), STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
+    event_schedule(expon(60 / expon_interarrival_rate[0], STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
+    event_schedule(expon(60 / expon_interarrival_rate[1], STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
+    event_schedule(expon(60 / expon_interarrival_rate[2], STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
 
     // Schedule first bus arrival event from location 3 to 1. The time is distance to air terminal 1 / bus_speed * 60.0 (convert to minutes)
     printf("- Scheduling first bus arrival event from terminal 3 to 1...\n");
@@ -149,7 +150,7 @@ void init_model() {
 
     // Schedule simulation end
     printf("- Scheduling simulation end...\n");
-    event_schedule(hour_to_minutes(simulation_length), EVENT_END_SIMULATION);
+    event_schedule(simulation_length, EVENT_END_SIMULATION);
 
     printf("Model initialized.\n\n");
 }
@@ -163,7 +164,7 @@ void arrive(int event_type) {
         list_file(LAST, LIST_AIR_TERMINAL_1);
         // answer a
         timest(list_size[LIST_AIR_TERMINAL_1], TIMEST_QUEUE_AIR_TERMINAL_1);
-        event_schedule(sim_time + expon(hour_to_minutes(1 / expon_interarrival_rate[0]), STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
+        event_schedule(sim_time + expon(60 / expon_interarrival_rate[0], STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
     } else if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_2) {
         // preload list data on transfer
         transfer[1] = sim_time;
@@ -171,7 +172,7 @@ void arrive(int event_type) {
         list_file(LAST, LIST_AIR_TERMINAL_2);
         // answer a
         timest(list_size[LIST_AIR_TERMINAL_2], TIMEST_QUEUE_AIR_TERMINAL_2);
-        event_schedule(sim_time + expon(hour_to_minutes(1 / expon_interarrival_rate[1]), STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
+        event_schedule(sim_time + expon(60 / expon_interarrival_rate[1], STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
     } else if (event_type == EVENT_ARRIVAL_CAR_RENTAL) {
         transfer[1] = sim_time;
         
@@ -184,7 +185,7 @@ void arrive(int event_type) {
         list_file(LAST, LIST_CAR_RENTAL);
         // answer a
         timest(list_size[LIST_CAR_RENTAL], TIMEST_QUEUE_CAR_RENTAL);
-        event_schedule(sim_time + expon(hour_to_minutes(1 / expon_interarrival_rate[2]), STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
+        event_schedule(sim_time + expon(60 / expon_interarrival_rate[2], STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
     }
 }
 
