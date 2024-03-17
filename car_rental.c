@@ -77,6 +77,7 @@ double second_to_minutes(double time) {
 void parse_input(char* file_name) {
     infile = fopen(file_name, "r");
     fscanf(infile, "%d %d %d", &num_location, &num_air_terminal, &simulation_length);
+    simulation_length = hour_to_minutes(simulation_length);
     for (int i = 0; i < num_location; i++) {
         fscanf(infile, "%lf", &expon_interarrival_rate[i]);
     }
@@ -86,9 +87,11 @@ void parse_input(char* file_name) {
     }
     for (int i = 0; i < 2; i++) {
         fscanf(infile, "%lf", &uniform_unload_time_range[i]);
+        uniform_unload_time_range[i] = second_to_minutes(uniform_unload_time_range[i]);
     }
     for (int i = 0; i < 2; i++) {
         fscanf(infile, "%lf", &uniform_load_time_range[i]);
+        uniform_load_time_range[i] = second_to_minutes(uniform_load_time_range[i]);
     }
     for (int i = 0; i < num_location; i++) {
         fscanf(infile, "%lf", &distance[i]);
@@ -335,7 +338,7 @@ int main() {
 
     // Invoke timing and determine action based on next event type
     while (next_event_type != EVENT_END_SIMULATION) {
-        printf("Next event type: %d\n", next_event_type);
+        // printf("Next event type: %d\n", next_event_type);
         timing();
         switch (next_event_type) {
             case EVENT_ARRIVAL_AIR_TERMINAL_1:
