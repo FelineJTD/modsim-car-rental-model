@@ -132,14 +132,15 @@ void init_model() {
     sampst(0.0, 0);
     timest(0.0, 0);
 
-    // Schedule first arrival event of persons on each terminal
+    // Schedule first arrival event of persons on each location
     // The mean interarrival time is 60.0 / expon_interarrival_rate (meaning the time between each person arrival is 60.0 / expon_interarrival_rate minutes)
     printf("- Scheduling first arrival event of persons on each terminal...\n");
+    // sim_time = 0
     event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[0]), STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
     event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[1]), STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
     event_schedule(expon(hour_to_minutes(1 / expon_interarrival_rate[2]), STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
 
-    // Schedule first bus arrival event from terminal 3 to 1. The time is distance to terminal 1 / bus_speed * 60.0 (convert to minutes)
+    // Schedule first bus arrival event from location 3 to 1. The time is distance to air terminal 1 / bus_speed * 60.0 (convert to minutes)
     printf("- Scheduling first bus arrival event from terminal 3 to 1...\n");
     event_schedule(hour_to_minutes((distance[0] / bus_speed)), EVENT_BUS_ARRIVAL_AIR_TERMINAL_1);
 
@@ -157,6 +158,7 @@ void arrive(int event_type) {
         transfer[1] = sim_time;
         transfer[3] = DESTINATION_AIR_TERMINAL_1;
         list_file(LAST, LIST_AIR_TERMINAL_1);
+        // answer a
         timest(list_size[LIST_AIR_TERMINAL_1], TIMEST_QUEUE_AIR_TERMINAL_1);
         event_schedule(sim_time + expon(hour_to_minutes(1 / expon_interarrival_rate[0]), STREAM_INTERARRIVAL_AIR_TERMINAL_1), EVENT_ARRIVAL_AIR_TERMINAL_1);
     } else if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_2) {
@@ -164,6 +166,7 @@ void arrive(int event_type) {
         transfer[1] = sim_time;
         transfer[3] = DESTINATION_AIR_TERMINAL_2;
         list_file(LAST, LIST_AIR_TERMINAL_2);
+        // answer a
         timest(list_size[LIST_AIR_TERMINAL_2], TIMEST_QUEUE_AIR_TERMINAL_2);
         event_schedule(sim_time + expon(hour_to_minutes(1 / expon_interarrival_rate[1]), STREAM_INTERARRIVAL_AIR_TERMINAL_2), EVENT_ARRIVAL_AIR_TERMINAL_2);
     } else if (event_type == EVENT_ARRIVAL_CAR_RENTAL) {
@@ -176,6 +179,7 @@ void arrive(int event_type) {
             transfer[3] = DESTINATION_AIR_TERMINAL_2;
         }
         list_file(LAST, LIST_CAR_RENTAL);
+        // answer a
         timest(list_size[LIST_CAR_RENTAL], TIMEST_QUEUE_CAR_RENTAL);
         event_schedule(sim_time + expon(hour_to_minutes(1 / expon_interarrival_rate[2]), STREAM_INTERARRIVAL_CAR_RENTAL), EVENT_ARRIVAL_CAR_RENTAL);
     }
@@ -183,7 +187,19 @@ void arrive(int event_type) {
 
 // Bus arrival event
 void bus_arrival(int event_type) {
-
+    if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_1) {
+        if (list_size[LIST_BUS_TO_AIR_TERMINAL_1] > 0) {
+            event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_1);
+        }
+    } else if (event_type == EVENT_ARRIVAL_AIR_TERMINAL_2) {
+        if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) {
+            event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_2);
+        }
+    } else if (event_type == EVENT_ARRIVAL_CAR_RENTAL) {
+        if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) {
+            event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_CAR_RENTAL);
+        }
+    }
 }
 
 // print report
@@ -192,12 +208,12 @@ void print_report(char* file_name) {
     fprintf(outfile, "num_location: %d\n", num_location);
     fprintf(outfile, "num_air_terminal: %d\n", num_air_terminal);
     fprintf(outfile, "simulation_length: %d\n", simulation_length);
-    for (int i = 0; i < num_location; i++) {
-        fprintf(outfile, "expon_interarrival_rate[%d]: %.3lf\n", i, expon_interarrival_rate[i]);
-    }
     fprintf(outfile, "bus_speed: %.3lf\n", bus_speed);
     fprintf(outfile, "bus_capacity: %.3lf\n", bus_capacity);
     fprintf(outfile, "bus_stop_time: %.3lf\n", bus_stop_time);
+    for (int i = 0; i < num_location; i++) {
+        fprintf(outfile, "expon_interarrival_rate[%d]: %.3lf\n", i, expon_interarrival_rate[i]);
+    }
     for (int i = 0; i < num_location; i++) {
         fprintf(outfile, "destination_probability[%d]: %.3lf\n", i, destination_probability[i]);
     }
