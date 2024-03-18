@@ -458,6 +458,70 @@ void print_report(char* file_name) {
     for (int i = 0; i < num_location; i++) {
         fprintf(outfile, "distance[%d]: %.3lf\n", i, distance[i]);
     }
+    fprintf(outfile, "\n\n------------Statistics Report in Minutes------------\n\n");
+    // Answer a
+    fprintf(outfile, "a. Average and maximum number in each queue\n");
+    for (int i = TIMEST_QUEUE_AIR_TERMINAL_1; i <= TIMEST_QUEUE_CAR_RENTAL; i++) {
+        timest(0.0, -i);
+        if (i == TIMEST_QUEUE_CAR_RENTAL) {
+            fprintf(outfile, "  Car Rental:\n");
+        } else {
+            fprintf(outfile, "  Air Terminal %d:\n", i);
+        }
+        fprintf(outfile, "    Average: %.3lf\n", transfer[1]);
+        fprintf(outfile, "    Maximum: %.3lf\n", transfer[2]);
+    }
+
+    // Answer b
+    fprintf(outfile, "\nb. Average and maximum delay in each queue\n");
+    for (int i = SAMPST_DELAY_AIR_TERMINAL_1; i <= SAMPST_DELAY_CAR_RENTAL; i++) {
+        sampst(0.0, -i);
+        if (i == SAMPST_DELAY_CAR_RENTAL) {
+            fprintf(outfile, "  Car Rental:\n");
+        } else {
+            fprintf(outfile, "  Air Terminal %d:\n", i);
+        }
+        fprintf(outfile, "    Average: %.3lf\n", transfer[1]);
+        fprintf(outfile, "    Maximum: %.3lf\n", transfer[3]);
+    }
+
+    // Answer c
+    fprintf(outfile, "\nc. Average and maximum number on the bus\n");
+    timest(0.0, -TIMEST_BUS);
+    fprintf(outfile, "  Average: %.3lf\n", transfer[1]);
+    fprintf(outfile, "  Maximum: %.3lf\n", transfer[2]);
+
+    // Answer d
+    fprintf(outfile, "\nd. Average, maximum, and minimum time the bus is stopped at each location\n");
+    for (int i = SAMPST_DELAY_BUS_STOP_AIR_TERMINAL_1; i <= SAMPST_DELAY_BUS_STOP_CAR_RENTAL; i++) {
+        sampst(0.0, -i);
+        if (i == SAMPST_DELAY_BUS_STOP_AIR_TERMINAL_1) {
+            fprintf(outfile, "  Air Terminal 1:\n");
+        } else if (i == SAMPST_DELAY_BUS_STOP_AIR_TERMINAL_2) {
+            fprintf(outfile, "  Air Terminal 2:\n");
+        } else if (i == SAMPST_DELAY_BUS_STOP_CAR_RENTAL) {
+            fprintf(outfile, "  Car Rental:\n");
+        }
+        fprintf(outfile, "    Average: %.3lf\n", transfer[1]);
+        fprintf(outfile, "    Maximum: %.3lf\n", transfer[3]);
+        fprintf(outfile, "    Minimum: %.3lf\n", transfer[4]);
+    }
+
+    // Answer e
+    fprintf(outfile, "\ne. Average, maximum, and minimum time for the bus to make a loop \n");
+    sampst(0.0, -SAMPST_DELAY_BUS_LOOP);
+    fprintf(outfile, "  Average: %.3lf\n", transfer[1]);
+    fprintf(outfile, "  Maximum: %.3lf\n", transfer[3]);
+    fprintf(outfile, "  Minimum: %.3lf\n", transfer[4]);
+
+    // Answer f
+    fprintf(outfile, "\nf. Average, maximum, and minimum time a person spends in the system\n");
+    sampst(0.0, -SAMPST_DELAY_PEOPLE);
+    fprintf(outfile, "  Average: %.3lf\n", transfer[1]);
+    fprintf(outfile, "  Maximum: %.3lf\n", transfer[3]);
+    fprintf(outfile, "  Minimum: %.3lf\n", transfer[4]);
+
+    fclose(outfile);
 }
 
 // Main program
