@@ -67,7 +67,7 @@
 /* Declare non-simlib global variables. */
 int num_location, num_air_terminal, simulation_length, bus_capacity, bus_location;
 double expon_interarrival_rate[3], bus_speed, bus_stop_time, destination_probability[3], uniform_load_time_range[2], uniform_unload_time_range[2], distance[3];
-double bus_arrive_time, bus_departure_time;
+double bus_arrive_time, bus_departure_time, person_arrive_time;
 FILE *infile, *outfile;
 
 // converter hour to minutes
@@ -78,6 +78,10 @@ double hour_to_minutes(double time) {
 // converter second to minutes
 double second_to_minutes(double time) {
     return time / 60.0;
+}
+
+double total_in_bus(){
+    return list_size[LIST_BUS_TO_AIR_TERMINAL_1] + list_size[LIST_BUS_TO_AIR_TERMINAL_2] + list_size[LIST_BUS_TO_CAR_RENTAL];
 }
 
 // Input parser
@@ -175,7 +179,7 @@ void arrive(int event_type) {
         printf("[%7.2lf] Person arrived at air terminal 1.\n", sim_time);
         printf("          Number of people waiting at air terminal 1: %d\n", list_size[LIST_AIR_TERMINAL_1]);
         // if bus is available and queue is empty, load the bus immediately
-        if (bus_location == LOCATION_AIR_TERMINAL_1 && list_size[LIST_AIR_TERMINAL_1] == 1) {
+        if (bus_location == LOCATION_AIR_TERMINAL_1 && list_size[LIST_AIR_TERMINAL_1] == 1 && total_in_bus() < bus_capacity) { // ini ga ngecek capacity bus total aja
             double load_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING);
             event_schedule(sim_time + load_time, EVENT_LOAD_AIR_TERMINAL_1);
             if (sim_time + load_time > bus_arrive_time + bus_stop_time) {
@@ -195,7 +199,7 @@ void arrive(int event_type) {
         printf("[%7.2lf] Person arrived at air terminal 2.\n", sim_time);
         printf("          Number of people waiting at air terminal 2: %d\n", list_size[LIST_AIR_TERMINAL_2]);
         // if bus is available and queue is empty, load the bus immediately
-        if (bus_location == LOCATION_AIR_TERMINAL_2 && list_size[LIST_AIR_TERMINAL_2] == 1) {
+        if (bus_location == LOCATION_AIR_TERMINAL_2 && list_size[LIST_AIR_TERMINAL_2] == 1 && total_in_bus() < bus_capacity) {
             double load_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING);
             event_schedule(sim_time + load_time, EVENT_LOAD_AIR_TERMINAL_2);
             if (sim_time + load_time > bus_arrive_time + bus_stop_time) {
@@ -223,7 +227,7 @@ void arrive(int event_type) {
         printf("          Number of people waiting at car rental: %d\n", list_size[LIST_CAR_RENTAL]);
 
         // if bus is available and queue is empty, load the bus immediately
-        if (bus_location == LOCATION_CAR_RENTAL && list_size[LIST_CAR_RENTAL] == 1) {
+        if (bus_location == LOCATION_CAR_RENTAL && list_size[LIST_CAR_RENTAL] == 1 && total_in_bus() < bus_capacity) {
             double load_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING);
             event_schedule(sim_time + load_time, EVENT_LOAD_CAR_RENTAL);
             if (sim_time + load_time > bus_arrive_time + bus_stop_time) {
@@ -318,6 +322,8 @@ void bus_departure(int event_type) {
         }
         bus_departure_time = sim_time;
     }
+    // answer c
+    timest(list_size[LIST_BUS_TO_AIR_TERMINAL_1] + list_size[LIST_BUS_TO_AIR_TERMINAL_2] + list_size[LIST_BUS_TO_CAR_RENTAL], TIMEST_BUS);
 }
 
 // Unload event
@@ -326,7 +332,7 @@ void unload(int event_type) {
     if (event_type == EVENT_UNLOAD_AIR_TERMINAL_1) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_1);
         // answer f
-        sampst(sim_time - transfer[1], SAMPST_DELAY_AIR_TERMINAL_1);
+        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
         printf("[%7.2lf] Passenger unloaded at air terminal 1.\n", sim_time);
         printf("          Number of people in the bus wanting to go to terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_1] > 0) { // If there are still passengers in the bus, schedule next unloading event
@@ -337,7 +343,7 @@ void unload(int event_type) {
     } else if (event_type == EVENT_UNLOAD_AIR_TERMINAL_2) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_2);
         // answer f
-        sampst(sim_time - transfer[1], SAMPST_DELAY_AIR_TERMINAL_2);
+        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
         printf("[%7.2lf] Passenger unloaded at air terminal 2.\n", sim_time);
         printf("          Number of people in the bus wanting to go to terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
         if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) { // If there are still passengers in the bus, schedule next unloading event
@@ -348,7 +354,7 @@ void unload(int event_type) {
     } else if (event_type == EVENT_UNLOAD_CAR_RENTAL) {
         list_remove(FIRST, LIST_BUS_TO_CAR_RENTAL);
         // answer f
-        sampst(sim_time - transfer[1], SAMPST_DELAY_CAR_RENTAL);
+        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
         printf("[%7.2lf] Passenger unloaded at car rental.\n", sim_time);
         printf("          Number of people in the bus wanting to go to car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) { // If there are still passengers in the bus, schedule next unloading event
@@ -366,6 +372,10 @@ void load(int event_type) {
     if (event_type == EVENT_LOAD_AIR_TERMINAL_1) {
         // Remove a person from the queue at air terminal 1 and put it in the bus, direction to car rental
         list_remove(FIRST, LIST_AIR_TERMINAL_1);
+        person_arrive_time = transfer[1];
+        // answer b
+        sampst(sim_time - person_arrive_time, SAMPST_DELAY_AIR_TERMINAL_1);
+        transfer[3] = LOCATION_AIR_TERMINAL_1;
         list_file(LAST, LIST_BUS_TO_CAR_RENTAL);
         printf("[%7.2lf] Passenger loaded to bus, direction to car rental.\n", sim_time);
         printf("          Number of people waiting at air terminal 1: %d\n", list_size[LIST_AIR_TERMINAL_1]);
@@ -382,11 +392,18 @@ void load(int event_type) {
         // If there is no more capacity
         else if (list_size[LIST_BUS_TO_CAR_RENTAL] == bus_capacity) {
             event_cancel(EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
-            event_schedule(sim_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
+            if (sim_time < bus_arrive_time + bus_stop_time)
+                event_schedule(bus_arrive_time + bus_stop_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
+            else
+                event_schedule(sim_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
         }
     } else if (event_type == EVENT_LOAD_AIR_TERMINAL_2) {
         // Remove a person from the queue at air terminal 2 and put it in the bus, direction to car rental
         list_remove(FIRST, LIST_AIR_TERMINAL_2);
+        person_arrive_time = transfer[1];
+        // answer b
+        sampst(sim_time - person_arrive_time, SAMPST_DELAY_AIR_TERMINAL_2);
+        transfer[3] = LOCATION_AIR_TERMINAL_2;
         list_file(LAST, LIST_BUS_TO_CAR_RENTAL);
         printf("[%7.2lf] Passenger loaded to bus, direction to car rental.\n", sim_time);
         printf("          Number of people waiting at air terminal 2: %d\n", list_size[LIST_AIR_TERMINAL_2]);
@@ -408,10 +425,15 @@ void load(int event_type) {
     } else if (event_type == EVENT_LOAD_CAR_RENTAL) {
         // Remove a person from the queue at car rental and put it in the bus, direction to air terminal 1 and 2
         list_remove(FIRST, LIST_CAR_RENTAL);
+        person_arrive_time = transfer[1];
+        // answer b
+        sampst(sim_time - person_arrive_time, SAMPST_DELAY_CAR_RENTAL);
         if (transfer[3] == DESTINATION_AIR_TERMINAL_1) {
+            transfer[3] = LOCATION_CAR_RENTAL;
             list_file(LAST, LIST_BUS_TO_AIR_TERMINAL_1);
             printf("[%7.2lf] Passenger loaded to bus, direction to air terminal 1.\n", sim_time);
         } else {
+            transfer[3] = LOCATION_CAR_RENTAL;
             list_file(LAST, LIST_BUS_TO_AIR_TERMINAL_2);
             printf("[%7.2lf] Passenger loaded to bus, direction to air terminal 2.\n", sim_time);
         }
