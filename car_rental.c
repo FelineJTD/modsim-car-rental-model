@@ -323,9 +323,6 @@ void bus_departure(int event_type) {
         bus_departure_time = sim_time;
     }
     // Answer c
-    printf("%d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
-    printf("%d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
-    printf("%d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
     timest(list_size[LIST_BUS_TO_AIR_TERMINAL_1] + list_size[LIST_BUS_TO_AIR_TERMINAL_2] + list_size[LIST_BUS_TO_CAR_RENTAL], TIMEST_BUS);
 }
 
