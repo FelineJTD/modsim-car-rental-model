@@ -36,7 +36,9 @@
 #define SAMPST_DELAY_BUS_STOP_AIR_TERMINAL_2 5
 #define SAMPST_DELAY_BUS_STOP_CAR_RENTAL 6
 #define SAMPST_DELAY_BUS_LOOP 7
-#define SAMPST_DELAY_PEOPLE 8
+#define SAMPST_DELAY_PEOPLE_AIR_TERMINAL_1 8
+#define SAMPST_DELAY_PEOPLE_AIR_TERMINAL_2 9
+#define SAMPST_DELAY_PEOPLE_CAR_RENTAL 10
 
 /* Statistic timest */
 #define TIMEST_QUEUE_AIR_TERMINAL_1 1
@@ -332,7 +334,7 @@ void unload(int event_type) {
     if (event_type == EVENT_UNLOAD_AIR_TERMINAL_1) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_1);
         // answer f
-        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
+        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE_AIR_TERMINAL_1);
         printf("[%7.2lf] Passenger unloaded at air terminal 1.\n", sim_time);
         printf("          Number of people in the bus wanting to go to terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
         // If there are still passengers in the bus, schedule next unloading event (and reschedule departure if delay > 5 minutes)
@@ -356,7 +358,7 @@ void unload(int event_type) {
     } else if (event_type == EVENT_UNLOAD_AIR_TERMINAL_2) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_2);
         // answer f
-        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
+        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE_AIR_TERMINAL_2);
         printf("[%7.2lf] Passenger unloaded at air terminal 2.\n", sim_time);
         printf("          Number of people in the bus wanting to go to terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
         // If there are still passengers in the bus, schedule next unloading event (and reschedule departure if delay > 5 minutes)
@@ -380,7 +382,7 @@ void unload(int event_type) {
     } else if (event_type == EVENT_UNLOAD_CAR_RENTAL) {
         list_remove(FIRST, LIST_BUS_TO_CAR_RENTAL);
         // answer f
-        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
+        sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE_CAR_RENTAL);
         printf("[%7.2lf] Passenger unloaded at car rental.\n", sim_time);
         printf("          Number of people in the bus wanting to go to car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         // If there are still passengers in the bus, schedule next unloading event (and reschedule departure if delay > 5 minutes)
@@ -577,10 +579,19 @@ void print_report(char* file_name) {
 
     // Answer f
     fprintf(outfile, "\nf. Average, maximum, and minimum time a person spends in the system\n");
-    sampst(0.0, -SAMPST_DELAY_PEOPLE);
-    fprintf(outfile, "  Average: %.3lf\n", transfer[1]);
-    fprintf(outfile, "  Maximum: %.3lf\n", transfer[3]);
-    fprintf(outfile, "  Minimum: %.3lf\n", transfer[4]);
+    for (int i = SAMPST_DELAY_PEOPLE_AIR_TERMINAL_1; i <= SAMPST_DELAY_PEOPLE_CAR_RENTAL; i++) {
+        sampst(0.0, -i);
+        if (i == SAMPST_DELAY_PEOPLE_AIR_TERMINAL_1) {
+            fprintf(outfile, "  Air Terminal 1:\n");
+        } else if (i == SAMPST_DELAY_PEOPLE_AIR_TERMINAL_2) {
+            fprintf(outfile, "  Air Terminal 2:\n");
+        } else if (i == SAMPST_DELAY_PEOPLE_CAR_RENTAL) {
+            fprintf(outfile, "  Car Rental:\n");
+        }
+        fprintf(outfile, "    Average: %.3lf\n", transfer[1]);
+        fprintf(outfile, "    Maximum: %.3lf\n", transfer[3]);
+        fprintf(outfile, "    Minimum: %.3lf\n", transfer[4]);
+    }
 
     fclose(outfile);
 }
