@@ -322,7 +322,10 @@ void bus_departure(int event_type) {
         }
         bus_departure_time = sim_time;
     }
-    // answer c
+    // Answer c
+    printf("%d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
+    printf("%d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
+    printf("%d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
     timest(list_size[LIST_BUS_TO_AIR_TERMINAL_1] + list_size[LIST_BUS_TO_AIR_TERMINAL_2] + list_size[LIST_BUS_TO_CAR_RENTAL], TIMEST_BUS);
 }
 
@@ -420,7 +423,7 @@ void load(int event_type) {
         printf("          Number of people waiting at air terminal 1: %d\n", list_size[LIST_AIR_TERMINAL_1]);
         printf("          Number of people in the bus: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
         // If there are still passengers in the queue and there is still capacity, schedule next loading event (and reschedule departure if delay > 5 minutes)
-        if (list_size[LIST_AIR_TERMINAL_1] > 0 && list_size[LIST_BUS_TO_CAR_RENTAL] < bus_capacity) {
+        if (list_size[LIST_AIR_TERMINAL_1] > 0 && list_size[LIST_BUS_TO_CAR_RENTAL] + list_size[LIST_BUS_TO_AIR_TERMINAL_2] < bus_capacity) {
             double load_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING);
             event_schedule(sim_time + load_time, EVENT_LOAD_AIR_TERMINAL_1);
             if (sim_time + load_time > bus_arrive_time + bus_stop_time) {
@@ -429,7 +432,7 @@ void load(int event_type) {
             }
         } 
         // If there is no more capacity
-        else if (list_size[LIST_BUS_TO_CAR_RENTAL] == bus_capacity) {
+        else if (list_size[LIST_BUS_TO_CAR_RENTAL] + list_size[LIST_BUS_TO_AIR_TERMINAL_2] == bus_capacity) {
             event_cancel(EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
             if (sim_time < bus_arrive_time + bus_stop_time)
                 event_schedule(bus_arrive_time + bus_stop_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
