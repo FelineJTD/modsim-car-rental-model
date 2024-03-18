@@ -335,10 +335,23 @@ void unload(int event_type) {
         sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
         printf("[%7.2lf] Passenger unloaded at air terminal 1.\n", sim_time);
         printf("          Number of people in the bus wanting to go to terminal 1: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_1]);
-        if (list_size[LIST_BUS_TO_AIR_TERMINAL_1] > 0) { // If there are still passengers in the bus, schedule next unloading event
-            event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_1);
-        } else { // If there are no more passengers, schedule next loading event
-            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_1);
+        // If there are still passengers in the bus, schedule next unloading event (and reschedule departure if delay > 5 minutes)
+        if (list_size[LIST_BUS_TO_AIR_TERMINAL_1] > 0) {
+            double unload_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_UNLOADING);
+            event_schedule(sim_time + unload_time, EVENT_UNLOAD_AIR_TERMINAL_1);
+            if (sim_time + unload_time > bus_arrive_time + bus_stop_time) {
+                event_cancel(EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
+                event_schedule(sim_time + unload_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
+            }
+        } 
+        // If there are no more passengers, schedule next loading event (and reschedule departure if delay > 5 minutes)
+        else {
+            double load_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING);
+            event_schedule(sim_time + load_time, EVENT_LOAD_AIR_TERMINAL_1);
+            if (sim_time + load_time > bus_arrive_time + bus_stop_time) {
+                event_cancel(EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
+                event_schedule(sim_time + load_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_1);
+            }
         }
     } else if (event_type == EVENT_UNLOAD_AIR_TERMINAL_2) {
         list_remove(FIRST, LIST_BUS_TO_AIR_TERMINAL_2);
@@ -346,10 +359,23 @@ void unload(int event_type) {
         sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
         printf("[%7.2lf] Passenger unloaded at air terminal 2.\n", sim_time);
         printf("          Number of people in the bus wanting to go to terminal 2: %d\n", list_size[LIST_BUS_TO_AIR_TERMINAL_2]);
-        if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) { // If there are still passengers in the bus, schedule next unloading event
-            event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_AIR_TERMINAL_2);
-        } else { // If there are no more passengers, schedule next loading event
-            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_AIR_TERMINAL_2);
+        // If there are still passengers in the bus, schedule next unloading event (and reschedule departure if delay > 5 minutes)
+        if (list_size[LIST_BUS_TO_AIR_TERMINAL_2] > 0) {
+            double unload_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_UNLOADING);
+            event_schedule(sim_time + unload_time, EVENT_UNLOAD_AIR_TERMINAL_2);
+            if (sim_time + unload_time > bus_arrive_time + bus_stop_time) {
+                event_cancel(EVENT_BUS_DEPARTURE_AIR_TERMINAL_2);
+                event_schedule(sim_time + unload_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_2);
+            }
+        } 
+        // If there are no more passengers, schedule next loading event (and reschedule departure if delay > 5 minutes)
+        else {
+            double load_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING);
+            event_schedule(sim_time + load_time, EVENT_LOAD_AIR_TERMINAL_2);
+            if (sim_time + load_time > bus_arrive_time + bus_stop_time) {
+                event_cancel(EVENT_BUS_DEPARTURE_AIR_TERMINAL_2);
+                event_schedule(sim_time + load_time, EVENT_BUS_DEPARTURE_AIR_TERMINAL_2);
+            }
         }
     } else if (event_type == EVENT_UNLOAD_CAR_RENTAL) {
         list_remove(FIRST, LIST_BUS_TO_CAR_RENTAL);
@@ -357,10 +383,23 @@ void unload(int event_type) {
         sampst(sim_time - transfer[1], SAMPST_DELAY_PEOPLE);
         printf("[%7.2lf] Passenger unloaded at car rental.\n", sim_time);
         printf("          Number of people in the bus wanting to go to car rental: %d\n", list_size[LIST_BUS_TO_CAR_RENTAL]);
-        if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) { // If there are still passengers in the bus, schedule next unloading event
-            event_schedule(sim_time + uniform(uniform_unload_time_range[0], uniform_unload_time_range[1], STREAM_UNLOADING), EVENT_UNLOAD_CAR_RENTAL);
-        } else { // If there are no more passengers, schedule next loading event
-            event_schedule(sim_time + uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING), EVENT_LOAD_CAR_RENTAL);
+        // If there are still passengers in the bus, schedule next unloading event (and reschedule departure if delay > 5 minutes)
+        if (list_size[LIST_BUS_TO_CAR_RENTAL] > 0) {
+            double unload_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_UNLOADING);
+            event_schedule(sim_time + unload_time, EVENT_UNLOAD_CAR_RENTAL);
+            if (sim_time + unload_time > bus_arrive_time + bus_stop_time) {
+                event_cancel(EVENT_BUS_DEPARTURE_CAR_RENTAL);
+                event_schedule(sim_time + unload_time, EVENT_BUS_DEPARTURE_CAR_RENTAL);
+            }
+        } 
+        // If there are no more passengers, schedule next loading event (and reschedule departure if delay > 5 minutes)
+        else {
+            double load_time = uniform(uniform_load_time_range[0], uniform_load_time_range[1], STREAM_LOADING);
+            event_schedule(sim_time + load_time, EVENT_LOAD_CAR_RENTAL);
+            if (sim_time + load_time > bus_arrive_time + bus_stop_time) {
+                event_cancel(EVENT_BUS_DEPARTURE_CAR_RENTAL);
+                event_schedule(sim_time + load_time, EVENT_BUS_DEPARTURE_CAR_RENTAL);
+            }
         }
     }
 }
